@@ -81,7 +81,7 @@ class HistoryPanel: SiteTableViewController, HomePanel {
     func notificationReceived(notification: NSNotification) {
         switch notification.name {
         case NotificationFirefoxAccountChanged, NotificationPrivateDataCleared:
-            refresh()
+            refreshData()
             break
         default:
             // no need to do anything at all
@@ -90,16 +90,18 @@ class HistoryPanel: SiteTableViewController, HomePanel {
         }
     }
 
-    @objc func refresh() {
-        self.refreshControl?.beginRefreshing()
+    func refreshData(completion: (()->())? = nil) {
         profile.syncManager.syncHistory().uponQueue(dispatch_get_main_queue()) { result in
             if result.isSuccess {
                 self.reloadData()
             }
-
-            // Always end refreshing, even if we failed!
-            self.refreshControl?.endRefreshing()
+            completion?()
         }
+    }
+
+    @objc func refresh() {
+        self.refreshControl?.beginRefreshing()
+        refreshData(completion: self.refreshControl?.endRefreshing)
     }
 
     private func refetchData() -> Deferred<Result<Cursor<Site>>> {
